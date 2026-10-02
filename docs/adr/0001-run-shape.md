@@ -4,30 +4,26 @@
 loop or graph, and the model calls each one cost). The four fields are the
 ones `ch10-e2` reads.
 
-- Status: <!-- write this: proposed | accepted | superseded by ADR NNNN -->
-- Date: <!-- write this -->
+- Status: accepted
+- Date: 2026-10-02
 
 ## Context
 
-<!-- write this: what forced a choice, and the model-call count you measured
-for each shape in session 8. -->
+The capstone contract requires: zero model calls on an unsupported question, at most one corrective retry on a parse failure, and a flagged refusal on provider error or timeout. Each of these is a guarantee about the number of model calls one question costs. A loop whose exit condition the model controls cannot give that guarantee. Measured on the practice set with `claude-haiku-4-5`: a chain costs 0 or 1 model call per question.
 
 ## Decision (`decision`)
 
-<!-- write this: one sentence phrased as a choice ("we keep the chain in
-agent.py"), not as a description of the code. -->
+We keep the chain in `agent.py`: retrieve, filter by topic, one model call, verify citations, flag or refuse. `max_tool_calls=3` is a budget, not a loop condition.
 
 ## Options considered (`options_considered`)
 
-1. <!-- write this: the option you took -->
-2. <!-- write this: the option you turned down -->
+1. Chain: fixed steps, one model call at most.
+2. Loop: the model decides the next step until it stops.
 
 ## Why not the other option (`why_not`)
 
-<!-- write this: the reason it lost, today. The reason, not the verdict. -->
+A loop makes the "zero model calls" and "one corrective retry" guarantees structural only if the loop itself is bounded, which turns it into a chain with extra machinery. The practice set has no case that needs a second retrieval round after reading the first, so the loop buys nothing today.
 
 ## What would reverse it (`reverses_it`)
 
-<!-- write this: a measurement with a number and a unit, e.g. "when a question
-needs more than 2 model calls in 10 of the golden cases". "When it gets slow" is
-an opinion, not a trigger. -->
+When a question in the golden set needs more than 2 model calls in 10 of 10 runs to cover its required concepts, the chain's one-call guarantee stops holding and a bounded loop becomes the honest shape.

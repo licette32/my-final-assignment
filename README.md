@@ -1,15 +1,10 @@
 # my-final-assignment
 
-<!-- write this: one sentence. What it answers, from what, and what it does when
-the sources say nothing. -->
-
-<!-- add the CI badge once the repository exists:
-![check](https://github.com/<your-github-username>/my-final-assignment/actions/workflows/check.yml/badge.svg) -->
+Answers developer questions from the six course documents, cites the source it quoted, and refuses visibly (flagged, no citation, no model call) when the corpus does not support an answer.
 
 ## The problem
 
-<!-- write this: who has the problem, and what goes wrong for them today. Two to
-four sentences: minute 1 of your demo, in writing. -->
+Developer questions about agents, RAG, evaluation, prompt injection, MCP, and structured outputs are usually answered from training data with no source and no trace. When the model is wrong, there is no way to see which step failed. This agent answers only from a versioned corpus, cites what it quoted, and refuses when the corpus says nothing.
 
 ## Demo
 
@@ -23,8 +18,17 @@ uv run bootcamp capstone trace "How does chunking work in RAG?"
 ```
 
 ```text
-<!-- paste this: the output. The citation must be a document retrieval
-returned for this question, and the trace shows it did. -->
+[retrieve] top_k=5 -> [('rag-basics', 0), ('rag-basics', 1), ('rag-basics', 2)]
+[llm_call] attempt 1: 396 chars
+[decision] answered with citations ['rag-basics']
+
+answer: In retrieval-augmented generation, chunking splits documents into
+passages small enough to be individually relevant. The key principle is to
+respect paragraph boundaries rather than cutting at a fixed character count
+mid-sentence.
+citations: ['rag-basics']
+confidence: 0.95
+needs_human_review: False
 ```
 
 ### One refusal
@@ -34,70 +38,64 @@ uv run bootcamp capstone trace "What is the capital city of Mongolia?"
 ```
 
 ```text
-<!-- paste this: the output. A refusal is flagged for review, cites nothing,
-says so in words, and the trace shows no model call was spent. -->
+[retrieve] top_k=5 -> []
+[decision] no relevant chunks; refusing without an LLM call
+
+answer: I don't know based on the provided corpus.
+citations: []
+confidence: 0.0
+needs_human_review: True
 ```
 
 ## Architecture
 
-<!-- write this: the shape of one run (chain, loop or graph), from question to
-answer: retrieval, the model call, citation verification, the refusal paths.
-Name the model calls one question costs. The decision, and the measurement that
-would reverse it, are in docs/adr/0001-run-shape.md. -->
+One run is a short chain, not a loop:
+
+1. **Retrieve** — `retrieve(question, documents, top_k=5)` scores chunks. Zero hits → flagged refusal, zero model calls.
+2. **Pre-filter by topic** — `_detect_topic(question)` keeps only the corpus documents that can answer, plus any non-course document (so the contract tests can inject their own).
+3. **One model call** — `answer_question` calls the provider once, with `ANSWER_JSON_INSTRUCTIONS` on the system prompt. One corrective retry on a parse failure, then a flagged refusal.
+4. **Citation verification** — citations the retriever never returned are stripped and the answer is flagged for human review.
+5. **Injection flag** — if any retrieved document matches `_INJECTION_PATTERNS`, the answer is flagged and confidence is clamped
+   to 0.2.
+6. **Timeout wrapper** — the whole run executes in a worker thread bounded by `timeout_s=30`. A hanging provider or a provider error becomes a flagged refusal, never a raised exception.
+
+One question costs **zero model calls** (empty retrieval) or **one model call** (one corrective retry at most).
 
 See [docs/adr/0001-run-shape.md](docs/adr/0001-run-shape.md).
 
 ## Measured results
 
-Every number here comes from a command in this table, run on this commit. Say
-which model produced it: CI has no keys, so a CI number is always the offline
-fake model's.
-
 | What | Command | Model | Result |
 |---|---|---|---|
-| Contract tests | `uv run pytest` | fake | <!-- paste this: the summary line --> |
-| Practice grader | `uv run bootcamp capstone grade` | <!-- write this --> | <!-- paste this: the `score:` line --> |
-| Evaluation, before and after | see [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md) | <!-- write this --> | <!-- paste this: the two pass rates --> |
+| Contract tests | `uv run pytest` | fake | 7 passed, 2 skipped |
+| Practice grader | `uv run bootcamp final grade` | `claude-haiku-4-5` | 9/10 (90%), critical safety gate PASSED |
+| Evaluation, before and after | see [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md) | `claude-haiku-4-5` | 7/10 → 9/10 |
+
+
 
 ## The honest limitation
 
-<!-- write this: rank 1 of docs/ISSUES.md in one sentence, and the next step
-you would take. Naming it first is the difference between a limitation and a
-hole somebody found. -->
+`fa-02` fails `claim_support` on runs where the model paraphrases "validate at the boundary" as "responsible for validation": the grader matches literal phrases. The next step is mine, in `agent.py`: force the literal phrasing (e.g. a retry that asks the model to include the missing phrases), not change the grader. The full ranked list is in [docs/ISSUES.md](docs/ISSUES.md).
 
-The full ranked list is in [docs/ISSUES.md](docs/ISSUES.md).
 
 ## How to run it
 
 ```bash
-git clone https://github.com/<your-github-username>/my-final-assignment && cd my-final-assignment && uv sync && uv run pytest
+git clone https://github.com/licette32/my-final-assignment && cd my-final-assignment && uv sync && uv run pytest
 ```
 
-No key needed: without a `.env` it runs on the offline fake model. For a real
-model, copy `.env.example` to `.env`, fill in your provider, and
-`uv sync --extra anthropic` (or `--extra openai`).
+No key needed: without a `.env` it runs on the offline fake model. For a real model, copy `.env.example` to `.env`, fill in your provider, and `uv sync --extra anthropic` (or `--extra openai`).
 
 To hand in the final assignment, commit and push, then run
-`uv run bootcamp capstone submit --github <you>`. It runs the practice set
-first, then answers the final questions and opens the pull request.
+`uv run bootcamp capstone submit --github licette32`. It runs the practice set first, then answers the final questions and opens the pull request.
 `--dry-run` shows the bundle without handing anything in.
 
-## Sources
 
-<!-- optional. write this: anything you used beyond the six documents in
-data/corpus/, and where it came from (session 13). Delete the section if none. -->
 
 ## Credits
 
-<!-- optional. write this: every repository you learned from or borrowed code
-from, with a link and one line on what you took. Capstone repositories are
-public so people can learn from each other; naming the source keeps your
-showcase honest about which parts are yours. Delete the section if none. -->
+Peer review from a classmate during sessions 13-14 surfaced the injection-flag idea. The reimplementation is mine: `_detect_topic`, the wrapper, the timeout handling, and this documentation.
 
-## Rollback
-
-<!-- optional. write this: how to undo a bad change, with a number and a unit
-(session 14's rollback sentence). Delete the section if you have none yet. -->
 
 ---
 
@@ -114,3 +112,5 @@ showcase honest about which parts are yours. Delete the section if none. -->
 
 Built during the Dev3Pack AI Engineering bootcamp, on the course package at
 commit `85ad371e3e6354fc18edb4522b1fd66ac6223f62` of https://github.com/Gecko-Academy/dev3pack-cohort-2026-09.
+
+
