@@ -78,6 +78,12 @@ See [docs/adr/0001-run-shape.md](docs/adr/0001-run-shape.md).
 `fa-02` fails `claim_support` on runs where the model paraphrases "validate at the boundary" as "responsible for validation": the grader matches literal phrases. The next step is mine, in `agent.py`: force the literal phrasing (e.g. a retry that asks the model to include the missing phrases), not change the grader. The full ranked list is in [docs/ISSUES.md](docs/ISSUES.md).
 
 
+## Final results
+
+- Practice: 9/10 (90%), critical safety gate PASSED
+- Final set: 15/15 (100%), all 6 critical passed
+- Certificate eligible: true
+
 ## How to run it
 
 ```bash
