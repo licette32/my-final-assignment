@@ -9,7 +9,7 @@ ones `ch10-e2` reads.
 
 ## Context
 
-The capstone contract requires: zero model calls on an unsupported question, at most one corrective retry on a parse failure, and a flagged refusal on provider error or timeout. Each of these is a guarantee about the number of model calls one question costs. A loop whose exit condition the model controls cannot give that guarantee. Measured on the practice set with `claude-haiku-4-5`: a chain costs 0 or 1 model call per question.
+The capstone contract requires: zero model calls on an unsupported question, at most one corrective retry on a parse failure, and a flagged refusal on provider error or timeout. Each of these is a guarantee about the number of model calls one question costs. A loop whose exit condition the model controls cannot give that guarantee. Measured on the practice set with `claude-sonnet-5`: a chain costs 0 or 1 model call per question.
 
 ## Decision (`decision`)
 

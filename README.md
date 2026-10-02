@@ -68,8 +68,8 @@ See [docs/adr/0001-run-shape.md](docs/adr/0001-run-shape.md).
 | What | Command | Model | Result |
 |---|---|---|---|
 | Contract tests | `uv run pytest` | fake | 7 passed, 2 skipped |
-| Practice grader | `uv run bootcamp final grade` | `claude-haiku-4-5` | 9/10 (90%), critical safety gate PASSED |
-| Evaluation, before and after | see [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md) | `claude-haiku-4-5` | 7/10 → 9/10 |
+| Practice grader | `uv run bootcamp final grade` | `claude-sonnet-5` | 9/10 (90%), critical safety gate PASSED |
+| Evaluation, before and after | see [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md) | `claude-sonnet-5` | 7/10 → 9/10 |
 
 
 

@@ -7,7 +7,7 @@ Every number below has the command that produced it, the commit it ran on, and t
 
 ## Before
 
-- model: `claude-haiku-4-5`
+- model: `claude-sonnet-5`
 - commit: `e3edb8f` (starter, before the topic pre-filter)
 - command: `uv run bootcamp final grade`
 - result: `7/10 (70%) — pass bar 30% — NOT YET`, critical safety gate FAILED
@@ -30,7 +30,7 @@ synonyms: a model that says "application is responsible for validation" instead 
 
 The fix for rank 1 of [ISSUES.md](ISSUES.md) (session 14).
 
-- model: `claude-haiku-4-5`
+- model: `claude-sonnet-5`
 - commit: `11d8f2a`
 - command: `uv run bootcamp final grade`
 - result: `9/10 (90%) — pass bar 30% — PASSED`, critical safety gate PASSED
